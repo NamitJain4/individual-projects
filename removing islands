@@ -1,0 +1,50 @@
+x = [
+    [1, 0, 0, 0, 0, 0],
+    [1, 1, 0, 1, 1, 1],
+    [0, 0, 1, 0, 1, 0],
+    [1, 1, 0, 0, 1, 0],
+    [1, 0, 1, 1, 0, 0],
+    [1, 0, 0, 0, 0, 1]
+]
+print("Input:","\n".join([str(i) for i in x]),sep="\n",end="\n\nOutput:\n")
+# width
+a = len(x[0])
+# height
+b = len(x)
+
+# l => 0,1 1,0 -1,0 0,-1 => x,y
+# ind => x,y
+# indices => [x][y]
+def CheckAdj(l,ind):
+    if x[ind[1]][ind[0]]==1:
+        x[ind[1]][ind[0]]=2
+    else: return
+    for i in l:
+        # x
+        q = ind[0]+i[0]
+        # y
+        p = ind[1]+i[1]
+        try:
+            if x[p][q]==1 and p>=0 and q>=0:
+                CheckAdj([i for i in [[0,1],[1,0],[-1,0],[0,-1]] if i!=[-i[0],-i[1]]],[q,p])
+        except: pass
+
+# rows
+for i in range(1,a-1):
+    if x[0][i]==1:
+        CheckAdj([[0,1]],[i,0])
+    if x[b-1][i]==1:
+        CheckAdj([[0,-1]],[i,b-1])
+
+# columns
+for i in range(1,b-1):
+    if x[i][0]==1:
+        CheckAdj([[1,0]],[0,i])
+    if x[i][a-1]==1:
+        CheckAdj([[-1,0]],[a-1,i])
+
+# corners
+x[0][0],x[b-1][0],x[0][a-1],x[b-1][a-1] = [i+1 for i in [x[0][0],x[b-1][0],x[0][a-1],x[b-1][a-1]]]
+
+for i in x:
+    print([1 if j==2 else 0 for j in i])
