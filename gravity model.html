@@ -1,0 +1,319 @@
+<!--
+    F = GMm/r^2
+    g = GM/r^2
+    initial speed
+    volume = mass (area in this case)
+-->
+
+<!DOCTYPE html>
+<html>
+    <head>
+<script>
+// accuracy
+
+var speed = [6,10],position = [3,7], center, circle, Mass=3.2, t, space, body;
+
+window.onload = function() {
+    document.getElementById("loading").style.display = "none";
+    center = document.getElementById("center");
+    circle = document.getElementById("circle");
+    space = document.getElementById("space");
+    body = document.getElementsByTagName("body")[0];
+    space.style.width = space.style.height = (body.offsetWidth>body.offsetHeight ? "100vh" : "100vw");
+    for (let i = 0; i < 10; i++) {
+        document.getElementById("grid").innerHTML += `
+        <div style="top:${i*10}%;left:0;width:100%;height:1px;background-color:rgba(255,255,255,0.2);"></div>
+        <div style="left:${i*10}%;top:0;height:100%;width:1px;background-color:rgba(255,255,255,0.2);"></div>`;
+    }
+    setTimeout(function() {
+        document.getElementById("info").style.left = "calc(100vw - 310px)";
+    },2000);
+}
+
+function velocity() {
+    let a = Mass/(distance()*100);
+    let angle;
+    if (Math.abs(position[0]-5) > 0.1) {
+        angle = Math.atan((position[1]-5)/(position[0]-5));
+        //console.log(angle*180/Math.PI);
+    }
+    else {
+        angle = Math.PI/2;
+    }
+    let x = a*Math.cos(angle), y = a*Math.sin(angle);
+    x = Math.abs(x)*(position[0]-5>0 ? -1 : 1);
+    y = Math.abs(y)*(position[1]-5>0 ? -1 : 1);
+    speed[0] += x;
+    speed[1] += y;
+    position[0]+=speed[0];
+    position[1]+=speed[1];
+    circle.style.top = `calc(${position[1]*10}% - 10px)`;
+    circle.style.left = `calc(${position[0]*10}% - 10px)`;
+    let radius = 250/document.getElementById("space").offsetWidth;
+    if (position[0]>5-radius && position[0]<5+radius && position[1]>5-radius && position[1]<5+radius) {
+        clearInterval(t);
+    }
+}
+
+function distance() {
+    return Math.pow(position[0]-5, 2)+Math.pow(position[1]-5, 2);
+}
+
+window.DefaultVals = function() {
+    for (let i = 0; i < 5; i++) {
+        document.getElementsByTagName("input")[i].value = [3.2,6,10,3,7][i];
+    }
+}
+
+window.Start = function() {
+    let i = document.getElementsByTagName("input");
+    speed = [parseFloat(i[1].value),parseFloat(i[2].value)];
+    Mass = parseFloat(i[0].value);
+    position = [parseFloat(i[3].value), parseFloat(i[4].value)];
+    document.getElementById("inp").style.display = "none";
+    circle.style.top = `calc(${position[1]*10}% - 10px)`;
+    circle.style.left = `calc(${position[0]*10}% - 10px)`;
+    speed[0]/=100;
+    speed[1]/=100;
+    setTimeout(function() {
+        t = setInterval(velocity, 20);
+    },1000);
+}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sriracha&family=Raleway&display=swap');
+
+body 
+{
+    height: 100vh;
+    width: 100vw;
+    top: -10px;
+    left: -10px;
+    font-family: Raleway;
+}
+
+#loading {
+    z-index: 1000;
+    height: 100vh;
+    width: 100vw;
+    background-color: #0c164f;
+    color: white;
+    line-height: 100vh;
+    text-align: center;
+    font-size: 30px;
+}
+
+* {
+    position: absolute;
+    user-select: none;
+}
+
+#center {
+    top: calc(50% - 20px);
+    left: calc(50% - 20px);
+    height: 40px;
+    width: 40px;
+    background-color: red;
+    border-radius: 50%;
+}
+
+#circle {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background-color: green;
+}
+
+#space {
+    background-color: #0c164f;
+    overflow: hidden;
+}
+
+#grid {
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+}
+
+#inp {
+    position: fixed;
+    height: 100vh;
+    width: 100vw;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    background-color: white;
+    letter-spacing: 1px;
+    word-spacing: 5px;
+    background-image: url("https://imgur.com/mfb8h9Z.jpg");
+    background-size: cover;
+}
+
+#inp-heading {
+    position: relative;
+    margin-left: 0;
+    width: 100vw;
+    margin-top: 5px;
+    font-size: 30px;
+    height: 80px;
+    line-height: 80px;
+    font-weight: 900;
+    text-align: center;
+    background-color: rgba(255,255,255,0.6);
+    backdrop-filter: blur(4px);
+    border-bottom: 5px solid magenta;
+}
+
+input {
+    width: 70px;
+    height: 43px;
+    font-size: 20px;
+    border: none;
+    border-bottom: 5px solid pink;
+    text-align: center;
+}
+
+input:focus {
+    outline: none;
+}
+
+.inps {
+    position: relative;
+    margin-left: 20px;
+    width: calc(100vw - 40px);
+    height: 50px;
+    background-color: rgba(255,255,255,0.8);
+    border: none;
+    border-bottom: 2px solid magenta;
+    border-radius: 10px 0 10px 0;
+    line-height: 50px;
+    font-size: 25px;
+    font-weight: 400;
+    margin-top: 10px;
+    backdrop-filter: blur(5px);
+}
+
+.small-inps {
+    left: 20px;
+}
+
+#default {
+    margin-left: 10px;
+    width: calc(50vw - 20px);
+    text-align: center;
+    background-color: white;
+    font-weight: 900;
+}
+
+#start {
+    margin-top: -50px;
+    margin-left: calc(50vw + 10px);
+    width: calc(50vw - 20px);
+    text-align: center;
+    background-color: white;
+    font-weight: 900;
+}
+
+#info {
+    left: 100vw;
+    top: 5px;
+    height: 20px;
+    width: 300px;
+    font-size: 15px;
+    line-height: 20px;
+    background-color: white;
+    border-left: 5px solid pink;
+    transition: 0.5s;
+    padding-left: 5px;
+}
+
+#close {
+    right: 0;
+    top: 0;
+    height: 20px;
+    width: 20px;
+    background-color: magenta;
+    color: white;
+    text-align: center;
+    font-weight: 900;
+}
+
+#info-page {
+    z-index: 100000;
+    left: 0;
+    padding-left: 5px;
+    padding-right: 5px;
+    width: calc(100vw - 10px);
+    top: -100vh;
+    height: 85vh;
+    border-bottom: 10px solid lightpink;
+    background-color: white;
+    border-radius: 0 0 20px 20px;
+    transition: 0.5s;
+}
+
+#close-page {
+    right: -5px;
+    top: -5px;
+    height: 40px;
+    width: 40px;
+    border-radius: 0 0 0 20px;
+    background-color: magenta;
+    color: white;
+    text-align: center;
+    font-size: 25px;
+    line-height: 40px;
+    font-weight: 900;
+}
+
+#yt {
+    position: relative;
+    display: block;
+    margin-top: 30px;
+    margin-left: 20px;
+    height: 50px;
+    line-height: 50px;
+    color: black;
+    font-size: 25px;
+    font-weight: 900;
+    text-decoration: none;
+    text-align: center;
+    width: calc(100vw - 40px);
+    background: linear-gradient(-240deg, transparent 10%, magenta 10%, magenta 13%, pink 13%, pink 16%, white 16%, white 84%, pink 84%, pink 87%, magenta 87%, magenta 90%, transparent 90%);
+    animation: textAnim 0.5s linear 0s infinite alternate;
+}
+
+@keyframes textAnim {
+    0% {font-size: 25px;}
+    100% {font-size: 27px;}
+}
+
+</style>
+    </head>
+    <body>
+        <div id = "loading">Loading...</div>
+        <div id = "inp">
+            <div id = "inp-heading">GRAVITY MODEL</div><br>
+            <div class = "inps"><div class="small-inps">Mass:<input type = "number" value = 3.2></div></div>
+            <div class = "inps"><div class="small-inps">Speed-X:<input type = "number" value = 6></div></div>
+            <div class = "inps"><div class="small-inps">Speed-Y:<input type = "number" value = 10></div></div>
+            <div class = "inps"><div class="small-inps">Position-X:<input type = "number" value = 3></div></div>
+            <div class = "inps"><div class="small-inps">Position-Y:<input type = "number" value = 7></div></div>
+            <div id = "default" class = "inps" onclick = "DefaultVals();">DEFAULT</div>
+            <div id = "start" class = "inps" onclick = "Start();">START</div>
+            <div id = "info"><div onclick = 'document.getElementById("info-page").style.top = "0";'>Why gravity is not a force?</div><div id = "close" onclick = 'document.getElementById("info").style.left = "100vw";'>x</div></div>
+            <div id = "info-page">
+                <div id = "close-page" onclick = 'document.getElementById("info-page").style.top = "-100vh"'>x</div>
+                <br><br>
+                In general relativity, gravity is not a force between masses.  Instead gravity is an effect of the warping of space and time in the presence of mass.  Without a force acting upon it, an object will move in a straight line.  If you draw a line on a sheet of paper, and then twist or bend the paper, the line will no longer appear straight.  In the same way, the straight path of an object is bent when space and time is bent.  This explains why all objects fall at the same rate.  The gravity warps spacetime in a particular way, so the straight paths of all objects are bent in the same way near the Earth. This acceleration can vary according to the mass of the object. Have a look at this video to have a better understanding: <br><a href="https://youtu.be/XRr1kaXKBsU" target="_blank">https://youtu.be/XRr1kaXKBsU</a><br><br>This code is not the perfect model of gravity, it is because javascript round offs the values (even though very little), that might cause the directions to change.
+            </div>
+            <a id = "yt" href="https://youtu.be/ysHGVM-h8io" target="_blank">LEARN TO CODE</a>
+        </div>
+        <div id = "space">
+            <div id = "grid"></div>
+            <div id = "center"></div>
+            <div id = "circle"></div>
+        </div>
+    </body>
+</html>
