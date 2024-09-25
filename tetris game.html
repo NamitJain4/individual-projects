@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html>
+    <head>
+<script>
+var tetris, blocks = [], obstacles = ["a", "b", "c", "d", "e", "f", "g"], b, sl, sr, t, currentObs, rot, down, myScore=0, lost=false, keysPressed = [];
+
+function fake() {
+    for (let i = 0; i < 22; i++) {
+        for (let j = 0; j < 14; j++) {
+            if (blocks[i][j]===3) {
+                blocks[i][j] = 0;
+            }
+        }
+    }
+    let list = []
+    for (let i = 0; i < 22; i++) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 2) {
+                blocks[i][j] = 3;
+                list.push([i, j]);
+            }
+        }
+    }
+    //document.getElementById("test").innerHTML += "2";
+    while (!fakeTouch()) {
+        fakeGravity();
+        //document.getElementById("test").innerHTML += "1";
+    }
+    for (let x of list) {
+        blocks[x[0]][x[1]] = 2;
+    }
+}
+
+function test() {
+    let te = document.getElementById("test");
+    te.innerHTML = "";
+    for (let i = 0; i < 22; i++) {
+        te.innerHTML += blocks[i] + "<br>";
+    }
+}
+//t2 = setInterval(test, 100)
+
+function fakeGravity() {
+    for (let i = 21; i >= 0; i--) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 3) {
+                blocks[i+1][j] = 3;
+                blocks[i][j] = 0;
+            }
+        }
+    }
+}
+
+function fakeTouch() {
+    for (let i = 0; i < 22; i++) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 3 && (i === 21 || blocks[i+1][j] === 1)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function startGame() {
+    lost = false;
+    for (let i = 0; i < 22; i++) {
+        blocks[i] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    }
+    for (let i = 0; i < 3; i++) {
+        document.getElementsByClassName("page")[i].style.display = "none";
+    }
+    document.getElementById("game").style.display = "block";
+    color();
+    myScore = 0;
+    t = setInterval(combined, 500);
+}
+
+function showRules() {
+    document.getElementById("rules").style.left = "0";
+}
+
+function showMore() {
+    document.getElementById("more").style.left = "0";
+}
+
+function back() {
+    for (let i = 0; i < 2; i++) {
+        document.getElementsByClassName("newpage")[i].style.left = "100vw";
+    }
+}
+
+window.onload = function() {
+    tetris = document.getElementById("tetris");
+    b = document.getElementById("blocks");
+    sl = document.getElementById("shift-l");
+    sr = document.getElementById("shift-r");
+    rot = document.getElementById("rotate");
+    down = document.getElementById("down");
+    for (let i = 0; i <= 10; i++) {
+        tetris.innerHTML+=`<div class = 'vertical' style = 'left:${100*i/10}%;'></div>`;
+    }
+    for (let i = 0; i <= 20; i++) {
+        tetris.innerHTML+=`<div class = 'horizontal' style = 'top:${100*i/20}%;'></div>`;
+    }
+    sl.addEventListener('click', function() {
+        shift(0);
+    });
+    sr.addEventListener('click', function() {
+       shift(1); 
+    });
+    rot.addEventListener('click', rotate);
+    down.addEventListener('click', function() {
+        if (contact()) {
+            while (!touched()) {
+                gravity();
+            }
+            down.disabled = true;
+            setTimeout(function() {
+                down.disabled = false;
+            }, 1000);
+        }
+    });
+    //deviceSize();
+};
+
+window.addEventListener("keydown", function(e) {
+    if (document.getElementById("down").disabled == false) {
+        keysPressed.push(e.key);
+    }
+    if (keysPressed.includes("ArrowUp")) {
+        rotate();
+        keysPressed.splice(keysPressed.indexOf("ArrowUp"), 1);
+    }
+    if (keysPressed.includes("ArrowDown")) {
+        if (contact()) {
+            while (!touched()) {
+                gravity();
+            }
+            down.disabled = true;
+            setTimeout(function() {
+                down.disabled = false;
+            }, 1000);
+        }
+        keysPressed.splice(keysPressed.indexOf("ArrowDown"), 1);
+    }
+    if (keysPressed.includes("ArrowLeft")) {
+        shift(0);
+        keysPressed.splice(keysPressed.indexOf("ArrowLeft"), 1);
+    }
+    if (keysPressed.includes("ArrowRight")) {
+        shift(1);
+        keysPressed.splice(keysPressed.indexOf("ArrowRight"), 1);
+    }
+    keysPressed = [];
+});
+
+function generate() {
+    return obstacles[Math.floor(Math.random()*5)];
+}
+
+function contact() {
+    for (let i = 0; i < 20; i++) {
+        for (let j = 0; j < 14; j++) {
+            if (blocks[i][j] === 2 && blocks[i+1][j] === 0 && blocks[i+2][j] === 1) {
+                return false;
+            }
+            if (blocks[i][j] === 2 && i < 2) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function convert(x) {
+    if (x === "a") {
+        blocks[0][6] = blocks[1][5] = blocks[1][6] = blocks[1][7] = 2;
+    }
+    else if (x === "b") {
+        blocks[0][6] = blocks[0][7] = blocks[0][8] = blocks[1][8] = 2;
+    }
+    else if (x === "c") {
+        blocks[0][5] = blocks[0][6] = blocks[0][7] = blocks[0][8] = 2;
+    }
+    else if (x === "d") {
+        blocks[0][6] = blocks[0][7] = blocks[1][6] = blocks[1][7] = 2;
+    }
+    else if (x === "e") {
+        blocks[0][6] = blocks[0][7] = blocks[1][7] = blocks[1][8] = 2;
+    }
+    else if (x === "f") {
+        blocks[0][7] = blocks[0][8] = blocks[1][7] = blocks[1][6] = 2;
+    }
+    else if (x === "g") {
+        blocks[0][6] = blocks[0][7] = blocks[0][8] = blocks[1][6] = 2;
+    }
+}
+
+function checkForTwo() {
+    for (let i = 0; i < 22; i++) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 2) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function gravity() {
+    for (let i = 21; i >= 0; i--) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 2) {
+                blocks[i+1][j] = 2;
+                blocks[i][j] = 0;
+            }
+        }
+    }
+}
+
+function shift(x) {
+    for (let i = 0; i < 22; i++) {
+        if (blocks[i][11] === 2 && x === 1) {
+            return;
+        }
+        else if (blocks[i][2] === 2 && x === 0) {
+            return;
+        }
+    }
+    for (let i = 0; i < 22; i++) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 2 && blocks[i][j+1] === 1 && x === 1) {
+                return;
+            }
+            else if (blocks[i][j] === 2 && blocks[i][j-1] === 1 && x === 0) {
+                return;
+            }
+        }
+    }
+    for (let i = 0; i < 22; i++) {
+        for (let j = 0; j < 14; j++) {
+            if (blocks[i][j] === 3) {
+                blocks[i][j]===0;
+            }
+        }
+    }
+    for (let i = 0; i < 22; i++) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 2 && x === 0) {
+                blocks[i][j-1] = 2;
+                blocks[i][j] = 0;
+            }
+        }
+        for (let j = 11; j >= 2; j--) {
+            if (blocks[i][j] === 2 && x === 1) {
+                blocks[i][j+1] = 2;
+                blocks[i][j] = 0;
+            }
+        }
+    }
+    fake(); //---------------------------------------------------------------------------------------
+    color();
+}
+
+function touched() {
+    for (let i = 0; i < 22; i++) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 2 && (i === 21 || blocks[i+1][j] === 1)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function color() {
+    b = document.getElementById("blocks");
+    b.innerHTML = "";
+    for (let i = 2; i < 22; i++) {
+        for (let j = 2; j < 12; j++) {
+            let newi = i-2;
+            let newj = j-2;
+            if (blocks[i][j] === 1) {
+                b.innerHTML+=`<div class = "block" style = "background-color:blue;top:calc(${100*newi/20}% + 1px);left:calc(${100*newj/10}% + 1px);"></div>`;
+            }
+            else if (blocks[i][j] === 2) {
+                b.innerHTML+=`<div class = "block" style = "background-color:red;top:calc(${100*newi/20}% + 1px);left:calc(${100*newj/10}% + 1px);"></div>`;
+            }
+            else if (blocks[i][j] === 3) {
+                b.innerHTML+=`<div class = "block" style = "background-color:rgba(255,255,255,0.5);top:calc(${100*newi/20}% + 1px);left:calc(${100*newj/10}% + 1px);"></div>`;
+            }
+        }
+    }
+}
+
+function firstTwo() {
+    for (let i = 0; i < 22; i++) {
+        for (let j = 2; j < 12; j++) {
+            if (blocks[i][j] === 2) {
+                return [i,j];
+            }
+        }
+    }
+}
+
+function rotate() {
+    var x = firstTwo();
+    let n = false;
+    for (let i = 2; i < 22; i++) {
+        for (let j = 0; j < 14; j++) {
+            if (blocks[i][j] === 2) {
+                n=true;
+            }
+        }
+    }
+    if (x && n) {
+        if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+1][x[1]+1]&&blocks[x[0]+1][x[1]+1]==blocks[x[0]+1][x[1]-1]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]-1]=0;
+            if (equal([blocks[x[0]+1][x[1]],blocks[x[0]][x[1]],blocks[x[0]+1][x[1]+1],blocks[x[0]+2][x[1]]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]]=blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]-1]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+1][x[1]+1]&&blocks[x[0]+1][x[1]+1]==blocks[x[0]+2][x[1]]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]]=0;
+            if (equal([blocks[x[0]+1][x[1]],blocks[x[0]+1][x[1]+1],blocks[x[0]+2][x[1]],blocks[x[0]+1][x[1]-1]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]]=blocks[x[0]+1][x[1]-1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+1][x[1]-1]&&blocks[x[0]+1][x[1]-1]==blocks[x[0]+2][x[1]]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=blocks[x[0]+2][x[1]]=0;
+            if (equal([blocks[x[0]][x[1]],blocks[x[0]+1][x[1]],blocks[x[0]+1][x[1]+1],blocks[x[0]+1][x[1]-1]], [0,0,0,0])) {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]-1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=blocks[x[0]+2][x[1]]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]+1][x[1]+1]&&blocks[x[0]+1][x[1]+1]==blocks[x[0]][x[1]+2]) {
+            blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]][x[1]+2]=0;
+            if (equal([blocks[x[0]][x[1]+1],blocks[x[0]][x[1]],blocks[x[0]+1][x[1]+1],blocks[x[0]-1][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]-1][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]][x[1]+2]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]][x[1]+2]&&blocks[x[0]][x[1]+2]==blocks[x[0]+1][x[1]+2]) {
+            blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=blocks[x[0]+1][x[1]+2]=0;
+            if (equal([blocks[x[0]][x[1]+1],blocks[x[0]+1][x[1]+1],blocks[x[0]+1][x[1]],blocks[x[0]-1][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]]=blocks[x[0]-1][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=blocks[x[0]+1][x[1]+2]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+2][x[1]]) {
+            blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]]=blocks[x[0]+2][x[1]]=0;
+            if (equal([blocks[x[0]+1][x[1]],blocks[x[0]+1][x[1]-1],blocks[x[0]+1][x[1]+1],blocks[x[0]+2][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]]=blocks[x[0]+2][x[1]]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+1][x[1]+1]&&blocks[x[0]+1][x[1]+1]==blocks[x[0]+1][x[1]+2]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]+2]=0;
+            if (equal([blocks[x[0]+1][x[1]+1],blocks[x[0]][x[1]+1],blocks[x[0]][x[1]+2],blocks[x[0]+2][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]+1]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=blocks[x[0]+2][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]+2]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+2][x[1]]&&blocks[x[0]+2][x[1]]==blocks[x[0]+2][x[1]-1]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+2][x[1]]=blocks[x[0]+2][x[1]-1]=0;
+            if (equal([blocks[x[0]+1][x[1]],blocks[x[0]+1][x[1]-1],blocks[x[0]+1][x[1]+1],blocks[x[0]][x[1]-1]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]][x[1]-1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+2][x[1]]=blocks[x[0]+2][x[1]-1]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]][x[1]+2]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=0;
+            if (equal([blocks[x[0]-1][x[1]+1],blocks[x[0]-1][x[1]],blocks[x[0]][x[1]+1],blocks[x[0]+1][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]-1][x[1]+1]=blocks[x[0]-1][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]+1][x[1]+1]&&blocks[x[0]+1][x[1]+1]==blocks[x[0]+2][x[1]+1]) {
+            blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]+1]=0;
+            if (equal([blocks[x[0]+1][x[1]+1],blocks[x[0]+1][x[1]],blocks[x[0]+1][x[1]+2],blocks[x[0]+2][x[1]]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+2]=blocks[x[0]+2][x[1]]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]+1]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]][x[1]+2]&&blocks[x[0]][x[1]+2]==blocks[x[0]-1][x[1]+2]) {
+            blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=blocks[x[0]-1][x[1]+2]=0;
+            if (equal([blocks[x[0]][x[1]+1],blocks[x[0]+1][x[1]+1],blocks[x[0]-1][x[1]+1],blocks[x[0]+1][x[1]+2]], [0,0,0,0])) {
+                blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]-1][x[1]+1]=blocks[x[0]+1][x[1]+2]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=blocks[x[0]-1][x[1]+2]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+2][x[1]]&&blocks[x[0]+2][x[1]]==blocks[x[0]+2][x[1]+1]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+2][x[1]]=blocks[x[0]+2][x[1]+1]=0;
+            if (equal([blocks[x[0]+1][x[1]],blocks[x[0]+1][x[1]-1],blocks[x[0]+2][x[1]-1],blocks[x[0]+1][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=blocks[x[0]+2][x[1]-1]=blocks[x[0]+1][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+2][x[1]]=blocks[x[0]+2][x[1]+1]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+1][x[1]-1]&&blocks[x[0]+1][x[1]-1]==blocks[x[0]+2][x[1]-1]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=blocks[x[0]+2][x[1]-1]=0;
+            if (equal([blocks[x[0]+1][x[1]-1],blocks[x[0]+1][x[1]-2],blocks[x[0]+2][x[1]-1],blocks[x[0]+2][x[1]]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]-1]=blocks[x[0]+1][x[1]-2]=blocks[x[0]+2][x[1]-1]=blocks[x[0]+2][x[1]]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=blocks[x[0]+2][x[1]-1]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+1][x[1]+1]&&blocks[x[0]+1][x[1]+1]==blocks[x[0]+2][x[1]+1]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]+1]=0;
+            if (equal([blocks[x[0]+1][x[1]],blocks[x[0]+1][x[1]+1],blocks[x[0]+2][x[1]],blocks[x[0]+2][x[1]-1]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]]=blocks[x[0]+2][x[1]-1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]+1]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]+1][x[1]+1]&&blocks[x[0]+1][x[1]+1]==blocks[x[0]+1][x[1]+2]) {
+            blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]+2]=0;
+            if (equal([blocks[x[0]][x[1]+1],blocks[x[0]][x[1]+2],blocks[x[0]-1][x[1]+2],blocks[x[0]+1][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=blocks[x[0]-1][x[1]+2]=blocks[x[0]+1][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]+2]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+1][x[1]-1]) {
+            blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=0;
+            if (equal([blocks[x[0]][x[1]],blocks[x[0]-1][x[1]],blocks[x[0]][x[1]+1],blocks[x[0]+1][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]][x[1]]=blocks[x[0]-1][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]-1]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]][x[1]+1]&&blocks[x[0]][x[1]+1]==blocks[x[0]][x[1]+2]&&blocks[x[0]][x[1]+2]==blocks[x[0]][x[1]+3]) {
+            blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=blocks[x[0]][x[1]+3]=0;
+            if (equal([blocks[x[0]][x[1]+1],blocks[x[0]-1][x[1]+1],blocks[x[0]+1][x[1]+1],blocks[x[0]+2][x[1]+1]], [0,0,0,0])) {
+                blocks[x[0]][x[1]+1]=blocks[x[0]-1][x[1]+1]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+2][x[1]+1]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]][x[1]+1]=blocks[x[0]][x[1]+2]=blocks[x[0]][x[1]+3]=2;
+            }
+        }
+        else if (blocks[x[0]][x[1]]==blocks[x[0]+1][x[1]]&&blocks[x[0]+1][x[1]]==blocks[x[0]+2][x[1]]&&blocks[x[0]+2][x[1]]==blocks[x[0]+3][x[1]]) {
+            blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+2][x[1]]=blocks[x[0]+3][x[1]]=0;
+            if (equal([blocks[x[0]+1][x[1]-1],blocks[x[0]+1][x[1]],blocks[x[0]+1][x[1]+1],blocks[x[0]+1][x[1]+2]], [0,0,0,0])) {
+                blocks[x[0]+1][x[1]-1]=blocks[x[0]+1][x[1]]=blocks[x[0]+1][x[1]+1]=blocks[x[0]+1][x[1]+2]=2;
+            }
+            else {
+                blocks[x[0]][x[1]]=blocks[x[0]+1][x[1]]=blocks[x[0]+2][x[1]]=blocks[x[0]+3][x[1]]=2;
+            }
+        }
+    }
+    for (let i = 0; i < 3; i++) {
+        outOfBox();
+    }
+    fake();
+    color();
+}
+
+function outOfBox() {
+    for (let i = 0; i < 22; i++) {
+        for (let j = 0; j < 14; j++) {
+            if (j > 11 && blocks[i][j]===2) {
+                for (let k = 0; k < 22; k++) {
+                    for (let l = 0; l < 14; l++) {
+                        if (blocks[k][l] == 2) {
+                            blocks[k][l]=0;
+                            blocks[k][l-1]=2;
+                        }
+                    }
+                }
+            }
+            if (j < 2 && blocks[i][j]===2) {
+                for (let k = 0; k < 22; k++) {
+                    for (let l = 13; l >= 0; l--) {
+                        if (blocks[k][l] == 2) {
+                            blocks[k][l]=0;
+                            blocks[k][l+1]=2;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+function clean() {
+    let n = 0;
+    for (let i = 2; i < 22; i++) {
+        if (equal(blocks[i], [0,0,1,1,1,1,1,1,1,1,1,1,0,0])) {
+            blocks[i] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+            n++;
+            for (let j = i; j > 0; j--) {
+                for (let k = 0; k < 14; k++) {
+                    if (blocks[j][k] === 1) {
+                        blocks[j+1][k] = 1;
+                        blocks[j][k] = 0;
+                    }
+                }
+            }
+        }
+    }
+    if (n==1) {myScore+=10;}
+    else if (n==2) {myScore+=25;}
+    else if (n==3) {myScore+=50;}
+    else if (n==4) {myScore+=100;}
+}
+
+const equal = (a,b) => {
+    if (a.length != b.length) {
+        return false;
+    }
+    else {
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function score() {
+    let s = document.getElementsByTagName("b")[0];
+    s.innerHTML = myScore;
+}
+
+function lose() {
+    if (blocks[1].includes(1)) {
+        lost = true;
+    }
+}
+
+function combined() {
+    color();
+    if (!checkForTwo()) {
+        convert(currentObs = generate());
+        for (let i = 0; i < 22; i++) {
+            for (let j = 0; j < 14; j++) {
+                if (blocks[i][j]===3) {blocks[i][j]=0;}
+            }
+        }
+        fake(); //--------------------------------------------------------------------------------------------------------------
+    }
+    if (touched()) {
+        for (let i = 0; i < 22; i++) {
+            for (let j = 2; j < 12; j++) {
+                if (blocks[i][j] === 2) {blocks[i][j]=1;}
+            }
+        }
+    }
+    else {
+        gravity();
+    }
+    clean();
+    score();
+    lose();
+    if (lost) {
+        clearInterval(t);
+        document.getElementById("game").style.display = "none";
+        document.getElementById("end").style.display = "block";
+        document.getElementById("final-score").innerHTML = `Your score: ${myScore}`;
+        myScore = 0;
+    }
+    color();
+    let abcd = false;
+    for (let i = 2; i < 22; i++) {
+        for (let j = 0; j < 14; j++) {
+            if (blocks[i][j] === 2) {
+                abcd = true;
+                for (let k = 0; k < 4; k++) {
+                    document.getElementsByClassName("btn")[k].disabled = false;
+                }
+            }
+        }
+    }
+    if (!abcd) {
+        for (let k = 0; k < 4; k++) {
+            document.getElementsByClassName("btn")[k].disabled = true;
+        }
+    }
+}
+
+</script>
+<style>
+body {
+    background-color: lightblue;
+    overflow: hidden;
+    height: 100vh;
+}
+
+* {
+    user-select: none;
+}
+
+#left-align {
+    text-align: left;
+}
+
+#hello {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+#tetris {
+    position: absolute;
+    left: calc(50vw - 15vh);
+    top: 5vh;
+    background-color: lightgreen;
+    height: 60vh;
+    width: 30vh;
+    border: 2px solid black;
+}
+
+.vertical {
+    position: absolute;
+    top: 0px;
+    background-color: black;
+    height: 60vh;
+    width: 0.5px;
+    opacity: 0.2;
+}
+
+.horizontal {
+    position: absolute;
+    left: 0px;
+    background-color: black;
+    height: 0.5px;
+    width: 30vh;
+    opacity: 0.2;
+}
+
+.btn {
+    position: absolute;
+    top: 70vh;
+    height: 10vh;
+    width: 33vw;
+    background: white;
+    border: 1px solid black;
+    text-align: center;
+    font-size: 15;
+}
+
+.btn:hover {
+    border: 1px solid red;
+}
+
+#shift-l {
+    left:0;
+}
+
+#shift-r {
+    left: calc(100vw - 34vw);
+}
+
+#rotate {
+    left: 33vw;
+}
+
+#down {
+    left: 33vw;
+    top: 80vh;
+}
+
+#blocks {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 10;
+}
+
+.block {
+    position: absolute;
+    height:calc(3vh - 2px);
+    width:calc(3vh - 2px);
+}
+
+#score {
+    position: absolute;
+    top: 5px;
+    left: calc(100vw - 100px);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+}
+
+.heading {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    height: 100px;
+    width: 100vw;
+    text-align: center;
+    font-size: 50px;
+    font-weight: 900;
+    background: linear-gradient(90deg, white, lightblue, white);
+    line-height: 100px;
+}
+
+.play-btn {
+    position: absolute;
+    top: 200px;
+    left: 40px;
+    width: calc(100vw - 80px);
+    height: 60px;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    background: white;
+}
+
+.play-btn:hover {
+    background-color:lightgreen;
+}
+
+.rules-btn {
+    top:300px;
+}
+
+.more-btn {
+    top: 400px;
+}
+
+#start {
+    display:block;
+}
+
+#game {
+    display: none;
+}
+
+#end {
+    display: none;
+}
+
+.back {
+    position: absolute;
+    height: 40px;
+    width: 70px;
+    font-size: 15px;
+    line-height: 35px;
+    top: calc(100vh - 50px);
+    left: calc(100vw - 80px);
+}
+
+.newpage {
+    position: absolute;
+    left: 100vw;
+    height: 100vh;
+    width: 100vw;
+    background-color: lightblue;
+    transition: 0.5s;
+    z-index: 100;
+}
+
+.text {
+    position: absolute;
+    top: 150px;
+    left: 10px;
+    height: calc(100vh - 250px);
+    width: calc(100vw - 20px);
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    overflow-y: scroll;
+    border: 2px solid black;
+    scrollbar-width: thin;
+    padding: 5px;
+}
+
+::-webkit-scrollbar {
+    background: rgba(255,255,255,0.25);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0,0,255, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(0,0,255);
+}
+
+#test {
+    position: absolute;
+    z-index: 1000000;
+    height:50vh;
+    width: 100vw;
+}
+
+#final-score {
+    position: absolute;
+    top: calc(100vh - 50px);
+    left: 20px;
+    font-size: 25px;
+    font-weight: 600;
+}
+
+</style>
+    </head>
+    <body>
+        <div id = "hello">
+        <div id = "start" class = "page">
+            <div class = "heading">TETRIS</div>
+            <button class = "play-btn" onclick="startGame();">START</button>
+            <button class = "play-btn rules-btn" onclick = "showRules();">RULES</button>
+            <button class = "play-btn more-btn" onclick = "showMore();">MORE</button>
+        </div>
+        <div id = "game" class = "page">
+            <div id = "score">SCORE: <b>0</b></div>
+            <div id = "tetris">
+                <div id = "blocks"></div>
+            </div>
+            <div id = "test"></div>
+            <button id = "shift-l" class = "btn">LEFT</button>
+            <button id = "shift-r" class = "btn">RIGHT</button>
+            <button id = "rotate" class = "btn">ROTATE</button>
+            <button id = "down" class = "btn">DOWN</button>
+        </div>
+        <div id = "end" class = "page">
+            <div class = "heading">GAME OVER</div>
+            <button class = "play-btn" onclick = "startGame();">REPLAY</button>
+            <button class = "play-btn rules-btn" onclick = "showRules();">RULES</button>
+            <button class = "play-btn more-btn" onclick = "showMore();">MORE</button>
+            <div id = "final-score"></div>
+        </div>
+        <div id = "rules" class = "newpage">
+            <button class = "back" onclick = "back();">BACK</button>
+            <div class = "heading">RULES</div>
+            <div class = "text">
+                There are 4 types of obstacles i.e. T, L, I (line), O(square). Each obstacle contains 4 blocks. You can rotate or shift (left or right) these obstacles and you have to arrange them in such a way that they fill a complete row of an empty space with 20 rows and 10 columns. The row which will fill completely with blue blocks then it will be removed and your score will increase by 10. There are some bonuses too! If you destroy 2 rows at the same time then there will be 5 bonus (total: +25), if you destroy 3 rows at the same time then there will be a bonus of 20 (total: +50), if you destroy 4 rows at the same time there will be a bonus of 60 (total: +100). Red colour will show that the block is moving and blue colour will show that the block is at rest and the light colored blocks will represent where the red obstacle will land. Strategy: don't leave empty spaces. There are 4 buttons on the screen:<div id = "left-align"><br>LEFT : to shift the left<br>RIGHT : to shift the right<br>DOWN : to push the obstacle down to its final position (that was earlier represented by white color) to save your time<br>ROTATE : to rotate the obstacle pi/4 radians in clockwise direction.</div><br>You will lose when a blue block will be there in the first row.
+            </div>
+        </div>
+        <div id = "more" class = "newpage">
+            <button class = "back" onclick = "back()">BACK</button>
+            <div class = "heading">MORE</div>
+            <div class = "text">Its AI code is coming soon (might take some time because of my exams).<br>Comment down your scores guys! My highest score is 1025.<br>Please upvote the code if you really appreciate my efforts, I will be very grateful.<br><br>&copy;Namit Jain</div>
+        </div>
+        </div>
+    </body>
+</html>
+
