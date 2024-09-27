@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Page Title</title>
+<script>
+var road = [
+    // outer boundary 
+    [[40, 90], [70, 60], [100, 50], [180, 40], [250, 50], [300, 70], [360, 100], [380, 150], [380, 200], [350, 230], [330, 245], [300, 255], [280, 280], [290, 300], [310, 330], [360, 380], [360, 450], [330, 490], [300, 510], [250, 515], [200, 520], [100, 510], [70, 470], [40, 420], [20, 350], [20, 280], [20, 200]],
+    // inner boundary
+    [[110, 130], [130, 120], [180, 110], [240, 110], [300, 130], [320, 170], [300, 190], [260, 205], [220, 250], [220, 300], [240, 340], [260, 380], [270, 390], [290, 410], [280, 430], [240, 445], [200, 450], [150, 440], [125, 410], [100, 360], [90, 300], [100, 190]]
+], body, car, turn=0, speed = 3, rot = 0, t1, t2, direction = 1;
+
+const pf = (x) => parseFloat(x);
+
+window.onload = function() {
+    body = document.getElementById("CarAI");
+    car = document.getElementById("car");
+    for (let points of road) {
+        for (let i = 0; i < points.length; i++) {
+            let next = i < points.length-1 ? i+1 : 0;
+            let x1=points[i][0],y1=points[i][1],x2=points[next][0],y2=points[next][1];
+            let width = Distance(x1, y1, x2, y2);
+            let angle = Angle(x1, y1, x2, y2);
+            //angle += (y2>=y1 && x2>=x1) ? 0 : 180;
+            //body.innerHTML += [...points[i], ...points[next]] + "<br>";
+            angle += (x1>x2 ? 180 : 0);
+            document.getElementById("road").innerHTML += `<div class = "line" style = "transform:rotate(${angle}deg); width:${width}px; top:${y1}px; left:${x1}px;"></div>`;
+        }
+    }
+    t1 = setInterval(MoveAhead, 20);
+    t2 = setInterval(DecideTurn, 1/0);
+}
+
+function Distance(x1, y1, x2, y2) {
+    return Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2));
+}
+
+function Angle(x1, y1, x2, y2) {
+    return Math.atan((y2-y1)/(x2-x1)) * 180/Math.PI;
+}
+
+function GivePoints(angle, x, y) {
+    let a = angle - 90;
+    let ratio = Math.tan(a*Math.PI/180);
+    let q = Math.sqrt(roadwidth**2 / (1+ratio**2));
+    let p = ratio * q;
+    return q, p;
+}
+
+function DecideTurn() {
+    if (rot> 360) {
+        rot-=360;
+    }
+    else if (rot<-360) {
+        rot+=360;
+    }
+    let x = pf(car.style.left)+10;
+    let y = pf(car.style.top);
+    let dot = document.getElementById("dot");
+    //dot.style.left = x + "px";
+    //dot.style.top = y + "px";
+    let d = [[], []];
+    if (direction===1) {
+        for (let i in road) {
+            let next=1;
+            for (let j in road[i]) {
+                //let next = j < road[i].length-1 ? j+1 : 0;
+                let dist = AreaOfTriangle([x,y], road[i][j], road[i][next])*2/Distance(...road[i][j],...road[i][next]);
+                if (CheckObtuseTriangle([x,y], road[i][j], road[i][next])) {
+                    dist = Math.min(Distance(x,y,...road[i][j]), Distance(x,y,...road[i][next]))
+                }
+                d[i].push(dist);
+                next+=1;
+                if (next === road[i].length) {
+                    next = 0;
+                }
+            }
+        }
+        let dleft = Math.min(...d[0]), dright = Math.min(...d[1]);
+        let index = d[0].indexOf(dleft);
+        let index2 = road[0].length+d[1].indexOf(dright);
+        let line = document.getElementsByClassName("line");
+        //document.getElementById("check").innerHTML = "";
+        let i = 0;
+        while (line[i]) {
+            line[i].style.backgroundColor = "black";
+            i++;
+        }
+        line[index].style.backgroundColor = "red";
+        line[index2].style.backgroundColor = "red";
+        let turn = (dright-dleft)/200+(dleft<20 ? 0.1/dleft : 0)-(dright<20 ? 0.1/dright : 0);
+        turn*=speed/2;
+        let next = index < d[0].length-1 ? index+1 : 0;
+        let next2 = index2 < d[0].length+d[1].length-1 ? index2+1 : d[0].length;
+        let next3 = next2-d[0].length;
+        line[next].style.backgroundColor = "blue";
+        line[next2].style.backgroundColor = "blue";
+        //document.getElementById("check").innerHTML = AngleBetweeenLines(road[0][index], road[0][next], road[0][next<road[0].length-1?next+1:0]);
+        let a = AngleOfLine(road[0][next], road[0][next<road[0].length-1?next+1:0])-rot;
+        let b = AngleOfLine(road[1][next3], road[1][next3<road[1].length-1?next3+1:0])-rot;
+        a+=(a>180 ? -360 : 0)+(a<-180 ? 360 : 0);
+        b+=(b>180 ? -360 : 0)+(b<-180 ? 360 : 0);
+        turn += (a+b)/360*speed;//AngleBetweeenLines(road[0][index], road[0][next], road[0][next<road[0].length-1?next+1:0])/100;
+        rot+=turn;
+    }
+    else {
+        for (let i in road) {
+            let next=road[i].length-1;
+            for (let j in road[i]) {
+                //let next = j < road[i].length-1 ? j+1 : 0;
+                let dist = AreaOfTriangle([x,y], road[i][j], road[i][next])*2/Distance(...road[i][j],...road[i][next]);
+                if (CheckObtuseTriangle([x,y], road[i][j], road[i][next])) {
+                    dist = Math.min(Distance(x,y,...road[i][j]), Distance(x,y,...road[i][next]))
+                }
+                d[i].push(dist);
+                next+=1;
+                if (next === road[i].length) {
+                    next = 0;
+                }
+            }
+        }
+        let dleft = Math.min(...d[0]), dright = Math.min(...d[1]);
+        let index = d[0].indexOf(dleft);
+        let index2 = road[0].length+d[1].indexOf(dright);
+        let line = document.getElementsByClassName("line");
+        //document.getElementById("check").innerHTML = "";
+        let i = 0;
+        while (line[i]) {
+            line[i].style.backgroundColor = "black";
+            i++;
+        }
+        line[index].style.backgroundColor = "red";
+        line[index2].style.backgroundColor = "red";
+        let turn = (dleft-dright)/200-(dleft<20 ? 0.1/dleft : 0)+(dright<20 ? 0.1/dright : 0);
+        turn*=speed/2;
+        let next = index > 0 ? index-1 : road[0].length-1;
+        let next2 = index2 > d[0].length ? index2-1 : d[0].length+d[1].length-1;
+        let next3 = next2-d[0].length;
+        line[next].style.backgroundColor = "blue";
+        line[next2].style.backgroundColor = "blue";
+        let a = AngleOfLine(road[0][next], road[0][next>0?next-1:road[0].length-1])-rot;
+        let b = AngleOfLine(road[1][next3], road[1][next3>0?next3-1:road[1].length-1])-rot;
+        a+=(a>180 ? -360 : 0)+(a<-180 ? 360 : 0);
+        b+=(b>180 ? -360 : 0)+(b<-180 ? 360 : 0);
+        //document.getElementById("check").innerHTML = a + " " + rot;
+        turn += (a+b)/360*speed;//AngleBetweeenLines(road[0][index], road[0][next], road[0][next<road[0].length-1?next+1:0])/100;
+        rot+=turn;
+    }
+    if (rot> 180) {
+        rot-=360;
+    }
+    else if (rot<-180) {
+        rot+=360;
+    }
+    //document.getElementById("check").innerHTML = a;
+    //document.getElementById("check").innerHTML = Math.round(dleft*100)/100 + " " + Math.round(dright*100)/100;
+
+}
+
+function AreaOfTriangle(a,b,c) {
+    return 1/2*Math.abs(a[0]*(b[1]-c[1])+b[0]*(c[1]-a[1])+c[0]*(a[1]-b[1]));
+}
+
+function MoveAhead() {
+    let top = Math.cos(Math.round(Math.abs(rot*Math.PI/180)*10000)/10000)*speed;
+    let left = Math.sin(rot*Math.PI/180)*speed;
+    car.style.top = pf(car.style.top)-top + "px";
+    car.style.left = pf(car.style.left)+left + "px";
+    car.style.transform = `rotate(${rot}deg)`;
+}
+
+function CheckObtuseTriangle(a,b,c) {
+    let p = Distance(...a, ...b), q = Distance(...b, ...c), r = Distance(...c, ...a);
+    if (p**2>q**2+r**2 || q**2>p**2+r**2 || r**2>p**2+q**2) {
+        return true;
+    }
+}
+
+function AngleBetweeenLines(a,b,c) {
+    let p = Angle(...b, ...a);
+    let q = Angle(...b, ...c);
+    return Math.abs(180-p+q)<90 ? 180-p+q : -p+q;
+}
+
+function AngleOfLine(a,b) {
+    let n = Angle(...a, ...b)+90+(b[0]<a[0] ? 180 : 0);
+    return n;
+}
+
+
+</script>
+<style>
+body 
+{
+    
+}
+
+#CarAI {
+    position: absolute;
+    height: 100vh;
+    width: 100vw;
+    top: 0;
+    left: 0;
+    background-color: skyblue;
+    text-align: right;
+}
+
+.line {
+    position: absolute;
+    background: black;
+    height: 2px;
+    transform-origin: left;
+}
+
+#road {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#car {
+    position: absolute;
+    height: 40px;
+    width: 20px;
+    background-color: red;
+    transform-origin: top;
+}
+
+.headlight {
+    position: absolute;
+    top: 0;
+    height: 4px;
+    width: 6px;
+    border-radius:0 0 50% 50%;
+    background-color: yellow;
+}
+
+.left {
+    left: 2px;
+}
+
+.right {
+    left: calc(50% + 2px);
+}
+
+#check {
+    position: absolute;
+    top: calc(100vh - 120px);
+    height:20px;
+    left: 0;
+    width: 100vw;
+    text-align: center;
+}
+
+#dot {
+    position: absolute;
+    height: 4px;
+    width: 4px;
+    background-color: black;
+    border-radius: 50%;
+    display: none;
+}
+
+
+</style>
+    </head>
+    <body id = "body">
+        <div id = "CarAI">
+            <div id = "road"></div>
+            <div id = "car" style = "top:300px;left:40px;">
+                <div class = "headlight left"></div>
+                <div class = "headlight right"></div>
+            </div>
+            <div id = "check"></div>
+            <div id = "dot"></div>
+        </div>
+    </body>
+</html>
+
+
